@@ -1,0 +1,12 @@
+oslib.c:7:5:test_add	24	static
+oslib.c:17:7:os_alloc	24	static
+oslib.c:24:6:os_free	16	static
+oslib.c:36:6:os_start	4	static
+oslib.c:52:9:task_new	24	static
+oslib.c:62:10:task_id	16	static
+oslib.c:72:7:task_wait	16	static
+oslib.c:80:6:task_kill	4	static
+oslib.c:88:6:task_yield	4	static
+oslib.c:101:13:sem_new	24	static
+oslib.c:111:6:sem_p	16	static
+oslib.c:119:6:sem_v	16	static

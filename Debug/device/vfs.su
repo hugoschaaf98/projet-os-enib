@@ -1,0 +1,10 @@
+vfs.c:11:7:strdup	24	static
+vfs.c:25:8:dirname	32	static
+vfs.c:43:8:basename	24	static
+vfs.c:68:16:dev_lookup	32	static
+vfs.c:108:5:open	16	static
+vfs.c:118:5:close	16	static
+vfs.c:128:5:read	24	static
+vfs.c:138:5:write	24	static
+vfs.c:148:5:ioctl	24	static
+vfs.c:158:5:lseek	16	static

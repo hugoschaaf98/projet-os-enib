@@ -1,0 +1,6 @@
+list.c:93:8:list_insert_head	16	static
+list.c:110:8:list_remove_head	16	static
+list.c:132:8:list_insert_tail	16	static
+list.c:150:8:list_remove_tail	24	static
+list.c:175:5:list_size	24	static
+list.c:194:6:list_display	32	static
