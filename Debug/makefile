@@ -38,7 +38,7 @@ all: projet_os_enib.axf
 projet_os_enib.axf: $(OBJS) $(USER_OBJS)
 	@echo 'Building target: $@'
 	@echo 'Invoking: MCU Linker'
-	arm-none-eabi-gcc -nostdlib -L"/media/linux_win7_exchange/Programmation/Nxp/projet_os_enib/libs" -Xlinker -Map="projet_os_enib.map" -Xlinker --gc-sections -Xlinker -print-memory-usage -Xlinker --sort-section=alignment -Xlinker --cref -mcpu=cortex-m33 -mfpu=fpv5-sp-d16 -mfloat-abi=hard -mthumb -T "projet_os_enib_Debug.ld" -o "projet_os_enib.axf" $(OBJS) $(USER_OBJS) $(LIBS)
+	arm-none-eabi-gcc -nostdlib -L"/media/linux_win7_exchange/Programmation/Nxp/projet_os_enib/libs" -Xlinker -Map="projet_os_enib.map" -Xlinker --gc-sections -Xlinker -print-memory-usage -Xlinker --sort-section=alignment -Xlinker --cref -mcpu=cortex-m33 -mfpu=fpv5-sp-d16 -mfloat-abi=hard -mthumb -T "lpcxpresso55s69_os_Debug.ld" -o "projet_os_enib.axf" $(OBJS) $(USER_OBJS) $(LIBS)
 	@echo 'Finished building target: $@'
 	@echo ' '
 	$(MAKE) --no-print-directory post-build

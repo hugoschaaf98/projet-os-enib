@@ -169,7 +169,7 @@ int32_t sys_task_new(TaskCode func, uint32_t stacksize)
 
 	Task *t = (Task*)malloc(sizeof(Task)+size);
 
-	if(t)
+	if(t != NULL)
 	{
 		t->id = id++;             		// identifier
 		t->status = TASK_READY;         // task status : running, ready, ...
@@ -193,7 +193,17 @@ int32_t sys_task_new(TaskCode func, uint32_t stacksize)
  */
 int32_t sys_task_kill()
 {
-	/* A COMPLETER */
+	Task* old_tsk_running = NULL;
+	/* replace tsk_running by next task and remove tsk_running from list
+	 * but keep the deleted tsk_running in old_tsk_running
+	 * to free it from memory
+	 */
+	tsk_running = list_remove_head(tsk_running, &old_tsk_running);
+	tsk_running->status = TASK_RUNNING;
+	// free the removed task memory space
+	free(old_tsk_running);
+	// switch context to run tsk_running
+	sys_switch_ctx();
 
 	return 0;
 }

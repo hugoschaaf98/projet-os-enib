@@ -7,10 +7,10 @@ kernel.c:92:6:sys_tick_cb	8	static
 kernel.c:103:6:SysTick_Handler	8	static
 kernel.c:120:9:sys_os_start	16	static
 kernel.c:165:9:sys_task_new	24	static
-kernel.c:194:9:sys_task_kill	4	static
-kernel.c:204:9:sys_task_id	4	static
-kernel.c:214:9:sys_task_yield	4	static
-kernel.c:223:9:sys_task_wait	16	static
-kernel.c:239:13:sys_sem_new	16	static
-kernel.c:249:9:sys_sem_p	16	static
-kernel.c:259:9:sys_sem_v	16	static
+kernel.c:194:9:sys_task_kill	16	static
+kernel.c:214:9:sys_task_id	4	static
+kernel.c:224:9:sys_task_yield	4	static
+kernel.c:233:9:sys_task_wait	16	static
+kernel.c:249:13:sys_sem_new	16	static
+kernel.c:259:9:sys_sem_p	16	static
+kernel.c:269:9:sys_sem_v	16	static
