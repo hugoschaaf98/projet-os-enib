@@ -36,6 +36,7 @@ void code2()
 		printf("tache %d\r\n",id);
 
 		for (int k=0;k<50000;k++);
+		task_kill();
 	}
 }
 
