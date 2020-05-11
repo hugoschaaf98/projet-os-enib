@@ -92,18 +92,31 @@ uint32_t sys_tick_cnt=0;
 void sys_tick_cb()
 {
     tsk_prev = tsk_running;
-    tsk_running -> status = TASK_READY;
+    tsk_prev -> status = TASK_READY;
 
-    tsk_running = tsk_running->next;
-    tsk_running -> status = TASK_RUNNING;
-
+    // check if we must wake up a sleeping task
+	Task* tmp = tsk_sleeping;
+	for(uint32_t i = 0; i < list_size(tsk_sleeping); i++)
+	{
+		if(!(tmp->delay-=SYS_TICK))
+		{
+			tsk_sleeping = list_remove_head(tsk_sleeping, &tmp);
+			tsk_running = list_insert_tail(tsk_running, tmp);
+			tsk_running->status = TASK_RUNNING;
+		}
+	}
+	// if no task woken up, perform a standard context switch
+	if(tsk_prev == tsk_running)
+    {
+		tsk_running = tsk_prev -> next;
+	    tsk_running -> status = TASK_RUNNING;
+    }
 	sys_switch_ctx();
 }
 
 void SysTick_Handler(void)
 {
 	sys_tick_cnt++;
-
 	if (sys_tick_cnt == SYS_TICK) {
 		sys_tick_cnt = 0;
 		sys_tick_cb();
@@ -177,8 +190,9 @@ int32_t sys_task_new(TaskCode func, uint32_t stacksize)
 		// t->splim = (uint32_t*)((uint8_t*)(t) + sizeof(Task));
 		t->sp = t->splim + (size >> 2) - 18; // get the top of the stack & divide size by 4 to get it in multiple of 32 bits chunks format
 		// save stack frame
-		t->sp[17] = 0x01000000;	// use PSP and thread mode
+		t->sp[17] = 0x01000000; // xPSR
 		t->sp[16] = (uint32_t)func;
+		// t->sp[15] = (uint32_t)task_kill;
 		t->sp[1] = 0xFFFFFFFD; 	// EXC_RETURN code to return in thread mode
 		t->sp[0] = 0x1; 		// CONTROL thread mode priveleged level => unprivileged
 		t->delay = 0;			// waiting delay (for timeouts)
@@ -200,6 +214,7 @@ int32_t sys_task_kill()
 	 */
 	tsk_running = list_remove_head(tsk_running, &old_tsk_running);
 	tsk_running->status = TASK_RUNNING;
+	tsk_prev = NULL;
 	// free the removed task memory space
 	free(old_tsk_running);
 	// switch context to run tsk_running
@@ -232,9 +247,23 @@ int32_t sys_task_yield()
  */
 int32_t sys_task_wait(uint32_t ms)
 {
-	/* A COMPLETER */
-
-	return 0;
+	// if no token available
+	if(ms)
+	{
+		Task* t;
+		// update the current task to sleep
+		tsk_running->status = TASK_SLEEPING;
+		tsk_running->delay = ms;
+		tsk_prev = tsk_running;
+		// perform the list transfer
+		tsk_running = list_remove_head(tsk_running, &t);
+		tsk_sleeping = list_insert_tail(tsk_sleeping, t);
+		tsk_running -> status = TASK_RUNNING;
+		// update the new task to run
+		sys_switch_ctx();
+		return 0;
+	}
+	return -1;
 }
 
 
@@ -248,9 +277,15 @@ int32_t sys_task_wait(uint32_t ms)
  */
 Semaphore * sys_sem_new(int32_t init)
 {
-	/* A COMPLETER */
+	Semaphore* tmp = (Semaphore*) malloc(sizeof(Semaphore));
 
-	return NULL;
+	if(tmp)
+	{
+		tmp->count = init;
+		tmp->waiting = NULL;
+		return tmp;
+	}
+	return tmp;
 }
 
 /* sys_sem_p
@@ -258,8 +293,19 @@ Semaphore * sys_sem_new(int32_t init)
  */
 int32_t sys_sem_p(Semaphore * sem)
 {
-	/* A COMPLETER */
-
+	// if no token available
+	if(sem && (sem->count--) < 0)
+	{
+		Task* t;
+		// insert
+		tsk_running -> status = TASK_WAITING;
+		tsk_prev = tsk_running;
+		tsk_running = list_remove_head(tsk_running, &t);
+		sem->waiting = list_insert_tail(sem->waiting, t);
+		tsk_running -> status = TASK_RUNNING;
+		sys_switch_ctx();
+		return 0;
+	}
 	return -1;
 }
 
@@ -268,7 +314,22 @@ int32_t sys_sem_p(Semaphore * sem)
  */
 int32_t sys_sem_v(Semaphore * sem)
 {
-	/* A COMPLETER */
-
+	// if no token available
+	if(sem)
+	{
+		sem->count++;
+		if(sem->waiting)
+		{
+			Task* t;
+			// retreive task from waiting task list
+			tsk_prev = tsk_running;
+			tsk_prev->status = TASK_READY;
+			sem->waiting = list_remove_head(sem->waiting, &t);
+			tsk_running = list_insert_head(tsk_running, t);
+			tsk_running->status = TASK_RUNNING;
+			sys_switch_ctx();
+			return 0;
+		}
+	}
 	return -1;
 }
