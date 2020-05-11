@@ -98,8 +98,9 @@ Device dev_leds={
     .name="leds",
     .refcnt=0,
     .init=dev_init_leds,
-    
-	/* A COMPLETER */
+	.open=dev_open_leds,
+	.close=dev_close_leds,
+	.write=dev_write_leds
 };
 
 static int dev_init_leds(Device *dev)
@@ -112,8 +113,6 @@ static int dev_init_leds(Device *dev)
 	GPIO_PinInit(BOARD_LED_BLUE_GPIO,BOARD_LED_BLUE_GPIO_PORT,BOARD_LED_BLUE_GPIO_PIN,&ledcfg);
 
 	leds(0);
-
-	/* A COMPLETER */
 
 	return 1;
 }
@@ -143,8 +142,8 @@ static int dev_close_leds(FileObject *f)
 
 static int dev_write_leds(FileObject *f, void *buf, size_t len)
 {
-	/* A COMPLETER */
-
+	uint32_t* val = (uint32_t*)(buf);
+	leds(*val);
     return 1;
 }
 

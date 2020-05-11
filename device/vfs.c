@@ -107,9 +107,50 @@ Semaphore *vfs_mutex;
  */
 int open(char *path, int flags)
 {
-	/* A COMPLETER */
-	
-    return -1;
+	int fd;
+	// operations must be atomic
+	sem_p(vfs_mutex);
+	// check if we can open something
+	for(fd = 0; fd < MAX_OPENED_FDS; fd++)
+	{
+		// soon as a free fd has been found use it
+		if(opened_fds[fd] == NULL)
+		{
+			FileObject* f = (FileObject*) os_alloc(sizeof(FileObject));
+			memset(f, 0, sizeof(FileObject));
+			// check if os_alloc succeeded
+			if(f)
+			{
+				f->name = strdup(path);
+				f->flags = flags;
+				// check if it's a hardware device or the /dev directory
+				if(!strcmp("/dev", f->name))
+				{
+					f->flags |= F_IS_DEVDIR;
+					break; // goto end:
+				}
+				// check if its a hardware device or a regular file
+				if(!strncmp("/dev/", f->name, 5)) f->flags |= F_IS_DEV;
+				// find device
+				f->dev = dev_lookup(path);
+				if(f->dev)
+				{
+					// open and check if it fails or succeed
+					if((fd = f->dev->open(f))>0) opened_fds[fd] = f;
+					break; // goto end:
+				}
+				// if device finding failed don't forget to free allocated memory
+				os_free(f->name); // allocated in strdup
+				os_free(f);
+			}
+			// something must have fail if it goes here
+			fd = -1;
+			break; // goto end:
+		}
+	}
+	// end:
+	sem_v(vfs_mutex);
+    return fd;
 }
 
 /* close
@@ -117,9 +158,17 @@ int open(char *path, int flags)
  */
 int close(int fd)
 {
-	/* A COMPLETER */
-
-    return -1;
+	sem_p(vfs_mutex);
+	FileObject* f = opened_fds[fd];
+	Device* dev = f->dev;
+	if(dev->close) dev->close(f);
+	// free every dynamically allocated fields
+	os_free(f->name);
+	os_free(f);
+	// mark the fd cell as free
+	opened_fds[fd] = NULL;
+	sem_v(vfs_mutex);
+    return 0;
 }
 
 /* read
@@ -127,8 +176,19 @@ int close(int fd)
  */
 int read(int fd, void *buf, size_t len)
 {
-	/* A COMPLETER */
-
+	FileObject* f = opened_fds[fd];
+	sem_p(vfs_mutex);
+	if(f)
+	{
+		// dev can't be null because open would have failed instead
+		Device* dev = f->dev;
+		if(dev->read)
+		{
+			sem_v(vfs_mutex);
+			return dev->read(f,buf,len);
+		}
+	}
+	sem_v(vfs_mutex);
     return -1;
 }
 
@@ -137,8 +197,18 @@ int read(int fd, void *buf, size_t len)
  */
 int write(int fd, void *buf, size_t len)
 {
-	/* A COMPLETER */
-
+	FileObject* f = opened_fds[fd];
+	sem_p(vfs_mutex);
+	if(f)
+	{
+		// dev can't be null because open would have failed instead
+		Device* dev = f->dev;
+		if(dev->write)
+		{
+			sem_v(vfs_mutex);
+			return dev->write(f,buf,len);
+		}
+	}
     return -1;
 }
 
